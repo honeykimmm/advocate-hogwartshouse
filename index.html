@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎩 Advocate — Hogwarts Quiz (Classroom)</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #F5C842;
+  --gold-dim: #a8882a;
+  --bg: #0e0b18;
+  --card: #1a1530;
+  --border: #2e2850;
+  --text: #f0ead8;
+  --muted: #7a7090;
+  --G: #c0392b; --G-light: #ffeaea; --G-dim: #3d0a0a;
+  --H: #c47f00; --H-light: #fff8e0; --H-dim: #3d2800;
+  --R: #185fa5; --R-light: #e8f0ff; --R-dim: #0a1e3d;
+  --S: #0f6e56; --S-light: #e0fff5; --S-dim: #042a1e;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  overflow: hidden;
+}
+
+/* ── STAR BG ── */
+.stars {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 60%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 30%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 80%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 20%, rgba(255,255,255,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 55%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 40%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 50%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 68% 10%, rgba(255,255,255,.5) 0%, transparent 100%);
+}
+
+/* ── SLIDE WRAPPER ── */
+.slide {
+  position: fixed; inset: 0; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 60px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s ease;
+}
+.slide.active { opacity: 1; pointer-events: all; }
+
+/* ── GOLD STRIPE TOP ── */
+.gold-stripe {
+  position: fixed; top: 0; left: 0; right: 0; height: 5px; z-index: 10;
+  background: linear-gradient(90deg, var(--G), var(--H), var(--R), var(--S));
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 14px; align-items: center; z-index: 20;
+}
+.nav-btn {
+  background: var(--card); border: 1.5px solid var(--border);
+  color: var(--text); border-radius: 10px;
+  padding: 10px 24px; font-size: 15px; font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer; transition: all .15s;
+}
+.nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+.nav-btn.primary { background: var(--gold); color: #1a1000; border-color: var(--gold); }
+.nav-btn.primary:hover { opacity: .88; }
+.nav-btn:disabled { opacity: .25; cursor: default; }
+.slide-counter {
+  font-size: 13px; color: var(--muted);
+  font-weight: 500; letter-spacing: .04em; min-width: 60px; text-align: center;
+}
+
+/* ── PROGRESS DOTS ── */
+.dots {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; z-index: 20;
+}
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border); transition: all .2s;
+}
+.dot.done { background: var(--gold-dim); }
+.dot.current { background: var(--gold); width: 20px; border-radius: 4px; }
+
+/* ══════════════════════════════════
+   SLIDE TYPES
+══════════════════════════════════ */
+
+/* ── TITLE SLIDE ── */
+.title-slide { text-align: center; }
+.title-hat { font-size: 96px; margin-bottom: 16px; line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(245,200,66,.4)); }
+.title-main {
+  font-family: 'Cinzel', serif; font-size: clamp(36px, 5vw, 64px);
+  font-weight: 900; color: var(--gold);
+  text-shadow: 0 0 40px rgba(245,200,66,.3);
+  letter-spacing: .04em; margin-bottom: 12px; line-height: 1.1;
+}
+.title-sub { font-size: clamp(14px, 2vw, 20px); color: var(--muted); margin-bottom: 32px; }
+.word-hero {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--G-dim), var(--S-dim));
+  border: 1.5px solid var(--gold-dim);
+  border-radius: 14px; padding: 18px 36px; margin-bottom: 8px;
+}
+.word-en { font-family: 'Cinzel', serif; font-size: clamp(28px, 4vw, 48px); font-weight: 700; color: var(--gold); }
+.word-ko { font-size: clamp(14px, 2vw, 20px); color: #c0b080; margin-top: 6px; }
+.house-strip { display: flex; gap: 16px; justify-content: center; margin-top: 28px; }
+.house-pill {
+  padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── HOW-TO SLIDE ── */
+.howto-title {
+  font-family: 'Cinzel', serif; font-size: clamp(22px, 3vw, 36px);
+  color: var(--gold); margin-bottom: 36px; text-align: center;
+}
+.howto-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; width: 100%; max-width: 900px; }
+.howto-card {
+  border-radius: 14px; padding: 20px 16px; text-align: center;
+  border: 1.5px solid var(--border);
+}
+.howto-letter {
+  font-family: 'Cinzel', serif; font-size: 40px; font-weight: 900; margin-bottom: 8px;
+}
+.howto-house { font-size: 22px; margin-bottom: 6px; }
+.howto-name { font-size: 15px; font-weight: 700; }
+
+/* ── QUESTION SLIDE ── */
+.q-header { width: 100%; max-width: 1000px; margin-bottom: 24px; }
+.q-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.q-num-badge {
+  background: var(--gold); color: #1a1000;
+  border-radius: 8px; padding: 4px 14px;
+  font-size: 13px; font-weight: 900; font-family: 'Cinzel', serif;
+  letter-spacing: .06em;
+}
+.q-word-badge {
+  background: rgba(245,200,66,.12); border: 1px solid rgba(245,200,66,.3);
+  border-radius: 8px; padding: 4px 14px;
+  font-size: 13px; color: var(--gold); font-weight: 700;
+}
+.q-text {
+  font-size: clamp(20px, 2.8vw, 34px); font-weight: 700;
+  line-height: 1.45; color: var(--text);
+}
+.opts-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; width: 100%; max-width: 1000px;
+}
+.opt-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 20px 24px;
+  display: flex; align-items: flex-start; gap: 16px;
+  transition: border-color .2s, background .2s;
+}
+.opt-letter {
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900;
+  min-width: 32px; line-height: 1.3;
+}
+.opt-text { font-size: clamp(14px, 1.8vw, 18px); line-height: 1.55; color: #d0c8b8; }
+
+/* highlight colors per letter */
+.opt-a .opt-letter { color: #7BC67A; }
+.opt-b .opt-letter { color: #E07070; }
+.opt-c .opt-letter { color: #7AAEDC; }
+.opt-d .opt-letter { color: #E0C060; }
+.opt-a:hover, .opt-a.hl { border-color: #7BC67A; background: rgba(123,198,122,.08); }
+.opt-b:hover, .opt-b.hl { border-color: #E07070; background: rgba(224,112,112,.08); }
+.opt-c:hover, .opt-c.hl { border-color: #7AAEDC; background: rgba(122,174,220,.08); }
+.opt-d:hover, .opt-d.hl { border-color: #E0C060; background: rgba(224,192,96,.08); }
+
+/* answer key line */
+
+/* ── ANSWER REVEAL ── */
+.reveal-slide { text-align: center; }
+.reveal-title {
+  font-family: 'Cinzel', serif; font-size: clamp(16px, 2vw, 24px);
+  color: var(--muted); margin-bottom: 24px; letter-spacing: .08em;
+}
+.reveal-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; width: 100%; max-width: 900px; }
+.reveal-card {
+  border-radius: 16px; padding: 24px 16px; border: 2px solid;
+  text-align: center;
+}
+.reveal-letter { font-family: 'Cinzel', serif; font-size: 52px; font-weight: 900; margin-bottom: 4px; }
+.reveal-arrow { font-size: 24px; margin-bottom: 8px; }
+.reveal-house { font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+.reveal-trait { font-size: 12px; margin-top: 4px; opacity: .7; }
+
+/* ── RESULT SLIDE ── */
+.result-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; width: 100%; max-width: 1000px; }
+.result-house-card {
+  border-radius: 18px; padding: 28px 24px; border: 2px solid;
+  position: relative; overflow: hidden;
+}
+.result-house-card::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 120px; height: 120px; border-radius: 50%;
+  opacity: .06;
+}
+.rh-emoji { font-size: 40px; margin-bottom: 8px; display: block; }
+.rh-name { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.rh-rule { font-size: 13px; opacity: .75; line-height: 1.55; }
+.rh-letters { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.rh-letter-tag {
+  font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700;
+  padding: 3px 10px; border-radius: 6px; opacity: .85;
+}
+
+/* ── WORD REVIEW SLIDE ── */
+.review-title {
+  font-family: 'Cinzel', serif; font-size: clamp(22px, 3vw, 36px);
+  color: var(--gold); margin-bottom: 32px; text-align: center;
+}
+.usage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 900px; }
+.usage-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 20px;
+}
+.usage-form { font-weight: 700; color: var(--gold); font-size: 14px; margin-bottom: 4px; }
+.usage-ko { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.usage-ex { font-size: 13px; color: #c0b8a0; line-height: 1.5; font-style: italic; }
+
+/* ── END SLIDE ── */
+.end-slide { text-align: center; }
+
+@media (max-width: 768px) {
+  .opts-grid { grid-template-columns: 1fr; }
+  .howto-grid { grid-template-columns: repeat(2,1fr); }
+  .result-grid { grid-template-columns: 1fr; }
+  .reveal-grid { grid-template-columns: repeat(2,1fr); }
+  .slide { padding: 20px 20px 80px; justify-content: flex-start; padding-top: 60px; overflow-y: auto; }
+  html, body { overflow: hidden; }
+}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="gold-stripe"></div>
+<div class="dots" id="dots"></div>
+
+<!-- ══════════ SLIDE 0: TITLE ══════════ -->
+<div class="slide active" id="s0">
+  <div class="title-slide">
+    <div class="title-hat">🎩</div>
+    <div class="title-main">Which Hogwarts House<br>Are You?</div>
+    <div class="title-sub">오늘의 단어 심리테스트</div>
+    <div class="word-hero">
+      <div class="word-en">advocate</div>
+      <div class="word-ko">동사: 옹호하다, 지지하다 &nbsp;|&nbsp; 명사: 옹호자, 지지자</div>
+    </div>
+    <div class="house-strip">
+      <div class="house-pill" style="background:rgba(192,57,43,.2);color:#f08070;border:1px solid #c0392b">🦁 Gryffindor</div>
+      <div class="house-pill" style="background:rgba(196,127,0,.2);color:#f0c060;border:1px solid #c47f00">🦡 Hufflepuff</div>
+      <div class="house-pill" style="background:rgba(24,95,165,.2);color:#80b8f0;border:1px solid #185fa5">🦅 Ravenclaw</div>
+      <div class="house-pill" style="background:rgba(15,110,86,.2);color:#60d0a8;border:1px solid #0f6e56">🐍 Slytherin</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SLIDE 1: HOW TO ══════════ -->
+<div class="slide" id="s1">
+  <div class="howto-title">📋 How to Play</div>
+  <div class="howto-grid">
+    <div class="howto-card" style="background:rgba(123,198,122,.08);border-color:#7BC67A44">
+      <div class="howto-letter" style="color:#7BC67A">A</div>
+      <div class="howto-house">🐍</div>
+      <div class="howto-name" style="color:#60d0a8">Slytherin</div>
+    </div>
+    <div class="howto-card" style="background:rgba(224,112,112,.08);border-color:#E0707044">
+      <div class="howto-letter" style="color:#E07070">B</div>
+      <div class="howto-house">🦁</div>
+      <div class="howto-name" style="color:#f08070">Gryffindor</div>
+    </div>
+    <div class="howto-card" style="background:rgba(122,174,220,.08);border-color:#7AAEDC44">
+      <div class="howto-letter" style="color:#7AAEDC">C</div>
+      <div class="howto-house">🦅</div>
+      <div class="howto-name" style="color:#80b8f0">Ravenclaw</div>
+    </div>
+    <div class="howto-card" style="background:rgba(224,192,96,.08);border-color:#E0C06044">
+      <div class="howto-letter" style="color:#E0C060">D</div>
+      <div class="howto-house">🦡</div>
+      <div class="howto-name" style="color:#f0c060">Hufflepuff</div>
+    </div>
+  </div>
+  <div style="margin-top:28px;font-size:15px;color:var(--muted);text-align:center;line-height:1.8;">
+    각 문제에서 나의 <strong style="color:var(--text)">advocate 스타일</strong>에 맞는 보기를 골라요<br>
+    제일 많이 고른 알파벳이 나의 기숙사! &nbsp;🎩
+  </div>
+</div>
+
+<!-- ══════════ Q1 ══════════ -->
+<div class="slide" id="s2">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 01</span>
+      <span class="q-word-badge">advocate for change (변화를 옹호하다)</span>
+    </div>
+    <div class="q-text">부당한 교칙이 생겼어. 넌 어떻게 advocate해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">표면보다 더 큰 구조적 문제를 파악하고 전략을 짠다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">직접 선생님께 찾아가서 왜 문제인지 당당히 말한다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">규칙의 논리적 허점을 분석해서 조목조목 반박한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">영향받는 친구들의 이야기를 모아서 함께 전달한다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q2 ══════════ -->
+<div class="slide" id="s3">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 02</span>
+      <span class="q-word-badge">advocate for someone (누군가를 옹호하다)</span>
+    </div>
+    <div class="q-text">친구가 억울하게 오해를 받고 있어. 넌 어떻게 advocate해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">상황을 정확히 파악한 뒤 가장 효과적인 타이밍에 말한다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">공개적으로 '그 친구는 그런 사람이 아니야!'라고 선언한다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">사실 관계를 정리해서 증거와 함께 해명해준다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">조용히 한 명씩 만나서 오해를 풀어준다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q3 ══════════ -->
+<div class="slide" id="s4">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 03</span>
+      <span class="q-word-badge">advocate for inclusion (포용을 옹호하다)</span>
+    </div>
+    <div class="q-text">학교에서 소외된 친구를 위해 advocate하고 싶어. 어떻게 해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">핵심 인물들을 설득해 분위기 자체를 바꿔버린다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">공개적인 자리에서 목소리를 높여 포용을 촉구한다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">소외의 원인을 분석하고 구체적인 해결책을 제안한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">그 친구가 편안하게 느낄 수 있도록 직접 곁에 있어준다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q4 ══════════ -->
+<div class="slide" id="s5">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 04</span>
+      <span class="q-word-badge">advocate (명사: 옹호자, 지지자)</span>
+    </div>
+    <div class="q-text">넌 어떤 타입의 advocate야?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">조용하지만 결정적 순간에 움직이는 <em>strategic advocate</em></span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">앞에 서서 크게 외치는 <em>loud advocate</em></span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">논리와 데이터로 설득하는 <em>rational advocate</em></span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">모든 사람의 마음을 헤아리는 <em>empathetic advocate</em></span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q5 ══════════ -->
+<div class="slide" id="s6">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 05</span>
+      <span class="q-word-badge">advocate for a cause (명분을 위해 옹호하다)</span>
+    </div>
+    <div class="q-text">환경 문제를 위해 advocate하고 싶어. 어떻게 시작해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">영향력 있는 사람들과 연대해서 변화를 만든다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">시위나 캠페인에 직접 참여해서 목소리를 높인다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">통계와 자료를 모아서 설득력 있는 발표를 준비한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">주변 사람들과 대화하며 공감대를 넓혀간다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q6 ══════════ -->
+<div class="slide" id="s7">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 06</span>
+      <span class="q-word-badge">advocate against authority (권위에 맞서 옹호하다)</span>
+    </div>
+    <div class="q-text">선생님이 틀린 결정을 내렸어. 넌 어떻게 advocate해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">상황을 더 크게 만들지 않으면서 결과를 바꿀 방법을 찾는다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">수업 중이라도 정중하게 이의를 제기한다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">근거 자료를 준비해서 논리적으로 반박한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">수업 후 선생님께 개인적으로 찾아가 솔직하게 말한다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q7 ══════════ -->
+<div class="slide" id="s8">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 07</span>
+      <span class="q-word-badge">advocate on behalf of (대신하여 옹호하다)</span>
+    </div>
+    <div class="q-text">동생이 선생님께 불이익을 당했어. 어떻게 advocate해줄 거야?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">학교 절차를 이용해서 공식적으로 문제를 제기한다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">선생님께 직접 찾아가서 상황을 바로잡아달라고 말한다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">어떤 규정이 위반됐는지 파악하고 정확하게 항의한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">동생의 감정을 먼저 다독이고, 함께 해결 방법을 찾는다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q8 ══════════ -->
+<div class="slide" id="s9">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 08</span>
+      <span class="q-word-badge">advocate for minority voices (소수 목소리를 옹호하다)</span>
+    </div>
+    <div class="q-text">그룹 안에서 소수 의견이 무시당하고 있어. 어떻게 advocate해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">다수 의견의 허점을 짚어서 간접적으로 분위기를 바꾼다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">'그 의견도 들어봐야 해!'라고 바로 끼어든다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">소수 의견의 논리적 타당성을 정리해서 발표한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">그 사람이 직접 말할 수 있도록 기회를 만들어준다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q9 ══════════ -->
+<div class="slide" id="s10">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 09</span>
+      <span class="q-word-badge">advocate for truth (진실을 옹호하다)</span>
+    </div>
+    <div class="q-text">SNS에서 잘못된 정보가 퍼지고 있어. 어떻게 advocate해?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">정보가 어떻게 퍼졌는지 파악하고 근원부터 차단한다.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">즉시 공개적으로 반박 게시물을 올린다.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">정확한 출처와 데이터를 찾아서 체계적으로 반박한다.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">주변 친구들에게 직접 사실을 알리며 확산을 막는다.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ Q10 ══════════ -->
+<div class="slide" id="s11">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="q-num-badge">Q 10</span>
+      <span class="q-word-badge">lifelong advocate (평생 옹호자)</span>
+    </div>
+    <div class="q-text">나중에 커서 어떤 방식으로 advocate하는 사람이 되고 싶어?</div>
+  </div>
+  <div class="opts-grid">
+    <div class="opt-card opt-a"><span class="opt-letter">A</span><span class="opt-text">정책과 제도를 바꿔 더 많은 사람에게 영향을 주는 사람.</span></div>
+    <div class="opt-card opt-b"><span class="opt-letter">B</span><span class="opt-text">언제나 현장 최전선에서 직접 목소리를 내는 사람.</span></div>
+    <div class="opt-card opt-c"><span class="opt-letter">C</span><span class="opt-text">연구와 논문으로 세상의 논리를 바꾸는 사람.</span></div>
+    <div class="opt-card opt-d"><span class="opt-letter">D</span><span class="opt-text">사람들의 이야기를 듣고 공감하며 연결하는 사람.</span></div>
+  </div>
+
+
+</div>
+</div>
+
+<!-- ══════════ REVEAL SLIDE ══════════ -->
+<div class="slide" id="s12">
+  <div class="reveal-title">🎩 &nbsp;정답 공개 — 어떤 기숙사야?</div>
+  <div class="reveal-grid">
+    <div class="reveal-card" style="background:rgba(123,198,122,.07);border-color:#7BC67A55">
+      <div class="reveal-letter" style="color:#7BC67A">A</div>
+      <div class="reveal-arrow">↓</div>
+      <div style="font-size:32px">🐍</div>
+      <div class="reveal-house" style="color:#60d0a8">Slytherin</div>
+      <div class="reveal-trait" style="color:#60d0a8">전략적 advocate</div>
+    </div>
+    <div class="reveal-card" style="background:rgba(224,112,112,.07);border-color:#E0707055">
+      <div class="reveal-letter" style="color:#E07070">B</div>
+      <div class="reveal-arrow">↓</div>
+      <div style="font-size:32px">🦁</div>
+      <div class="reveal-house" style="color:#f08070">Gryffindor</div>
+      <div class="reveal-trait" style="color:#f08070">용감한 advocate</div>
+    </div>
+    <div class="reveal-card" style="background:rgba(122,174,220,.07);border-color:#7AAEDC55">
+      <div class="reveal-letter" style="color:#7AAEDC">C</div>
+      <div class="reveal-arrow">↓</div>
+      <div style="font-size:32px">🦅</div>
+      <div class="reveal-house" style="color:#80b8f0">Ravenclaw</div>
+      <div class="reveal-trait" style="color:#80b8f0">논리적 advocate</div>
+    </div>
+    <div class="reveal-card" style="background:rgba(224,192,96,.07);border-color:#E0C06055">
+      <div class="reveal-letter" style="color:#E0C060">D</div>
+      <div class="reveal-arrow">↓</div>
+      <div style="font-size:32px">🦡</div>
+      <div class="reveal-house" style="color:#f0c060">Hufflepuff</div>
+      <div class="reveal-trait" style="color:#f0c060">공감하는 advocate</div>
+    </div>
+  </div>
+  <div style="margin-top:24px;font-size:15px;color:var(--muted);text-align:center;">
+    A / B / C / D 중 <strong style="color:var(--text)">가장 많이 고른 것</strong>이 나의 기숙사! 🪄
+  </div>
+</div>
+
+<!-- ══════════ RESULTS ══════════ -->
+<div class="slide" id="s13">
+  <div style="font-family:'Cinzel',serif;font-size:clamp(18px,2.5vw,30px);color:var(--gold);text-align:center;margin-bottom:24px;">
+    🎩 &nbsp;기숙사별 advocate 스타일
+  </div>
+  <div class="result-grid">
+    <div class="result-house-card" style="background:rgba(192,57,43,.1);border-color:#c0392b55">
+      <span class="rh-emoji">🦁</span>
+      <div class="rh-name" style="color:#f08070">Gryffindor</div>
+      <div class="rh-rule">두려움 없이 앞에서 목소리를 높이는 용감한 advocate. 부당한 것을 보면 즉시 행동해.</div>
+      <div class="rh-letters">
+        <span class="rh-letter-tag" style="background:rgba(224,112,112,.15);color:#E07070">B가 많은 사람</span>
+      </div>
+    </div>
+    <div class="result-house-card" style="background:rgba(196,127,0,.1);border-color:#c47f0055">
+      <span class="rh-emoji">🦡</span>
+      <div class="rh-name" style="color:#f0c060">Hufflepuff</div>
+      <div class="rh-rule">모두의 이야기를 듣고 공감으로 연결하는 따뜻한 advocate. 마음으로 먼저 다가가.</div>
+      <div class="rh-letters">
+        <span class="rh-letter-tag" style="background:rgba(224,192,96,.15);color:#E0C060">D가 많은 사람</span>
+      </div>
+    </div>
+    <div class="result-house-card" style="background:rgba(24,95,165,.1);border-color:#185fa555">
+      <span class="rh-emoji">🦅</span>
+      <div class="rh-name" style="color:#80b8f0">Ravenclaw</div>
+      <div class="rh-rule">논리와 근거로 무장한 지식의 advocate. 알면 알수록 더 강하게 옹호할 수 있어.</div>
+      <div class="rh-letters">
+        <span class="rh-letter-tag" style="background:rgba(122,174,220,.15);color:#7AAEDC">C가 많은 사람</span>
+      </div>
+    </div>
+    <div class="result-house-card" style="background:rgba(15,110,86,.1);border-color:#0f6e5655">
+      <span class="rh-emoji">🐍</span>
+      <div class="rh-name" style="color:#60d0a8">Slytherin</div>
+      <div class="rh-rule">조용하지만 결정적 순간에 판을 바꾸는 전략적 advocate. 이기는 방법을 알아야 진짜 변화!</div>
+      <div class="rh-letters">
+        <span class="rh-letter-tag" style="background:rgba(123,198,122,.15);color:#7BC67A">A가 많은 사람</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ WORD REVIEW ══════════ -->
+<div class="slide" id="s14">
+  <div class="review-title">📖 &nbsp;advocate — 오늘 배운 표현 정리</div>
+  <div class="usage-grid">
+    <div class="usage-card">
+      <div class="usage-form">advocate for change</div>
+      <div class="usage-ko">변화를 옹호하다</div>
+      <div class="usage-ex">"She advocated for change in school policy."</div>
+    </div>
+    <div class="usage-card">
+      <div class="usage-form">advocate for someone</div>
+      <div class="usage-ko">누군가를 옹호하다</div>
+      <div class="usage-ex">"He advocated for his friend who was treated unfairly."</div>
+    </div>
+    <div class="usage-card">
+      <div class="usage-form">an advocate (명사)</div>
+      <div class="usage-ko">옹호자, 지지자</div>
+      <div class="usage-ex">"Hermione is a strong advocate for equal rights."</div>
+    </div>
+    <div class="usage-card">
+      <div class="usage-form">advocate on behalf of</div>
+      <div class="usage-ko">~를 대신하여 옹호하다</div>
+      <div class="usage-ex">"Dumbledore advocated on behalf of all students."</div>
+    </div>
+    <div class="usage-card">
+      <div class="usage-form">advocate for a cause</div>
+      <div class="usage-ko">명분을 위해 옹호하다</div>
+      <div class="usage-ex">"They advocated for environmental causes."</div>
+    </div>
+    <div class="usage-card">
+      <div class="usage-form">advocate for truth</div>
+      <div class="usage-ko">진실을 옹호하다</div>
+      <div class="usage-ex">"A good journalist advocates for truth every day."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ END ══════════ -->
+<div class="slide" id="s15">
+  <div class="end-slide">
+    <div style="font-size:80px;margin-bottom:16px;">🎩</div>
+    <div style="font-family:'Cinzel',serif;font-size:clamp(28px,4vw,52px);font-weight:900;color:var(--gold);margin-bottom:16px;">
+      Well done!
+    </div>
+    <div style="font-size:clamp(16px,2vw,24px);color:var(--muted);margin-bottom:32px;line-height:1.7;">
+      오늘 <strong style="color:var(--text)">advocate</strong>를 완벽하게 익혔어요 🪄<br>
+      나의 기숙사는 어디였나요?
+    </div>
+    <div class="house-strip" style="justify-content:center;">
+      <div class="house-pill" style="background:rgba(192,57,43,.2);color:#f08070;border:1px solid #c0392b">🦁 Gryffindor</div>
+      <div class="house-pill" style="background:rgba(196,127,0,.2);color:#f0c060;border:1px solid #c47f00">🦡 Hufflepuff</div>
+      <div class="house-pill" style="background:rgba(24,95,165,.2);color:#80b8f0;border:1px solid #185fa5">🦅 Ravenclaw</div>
+      <div class="house-pill" style="background:rgba(15,110,86,.2);color:#60d0a8;border:1px solid #0f6e56">🐍 Slytherin</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ NAV ══════════ -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← 이전</button>
+  <span class="slide-counter" id="counter">1 / 16</span>
+  <button class="nav-btn primary" id="nextBtn" onclick="go(1)">다음 →</button>
+</div>
+
+<script>
+const TOTAL = 16;
+let cur = 0;
+
+function buildDots() {
+  const d = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' current' : '');
+    dot.id = 'dot' + i;
+    d.appendChild(dot);
+  }
+}
+
+function go(dir) {
+  const prev = cur;
+  cur = Math.max(0, Math.min(TOTAL - 1, cur + dir));
+  if (cur === prev) return;
+
+  document.getElementById('s' + prev).classList.remove('active');
+  document.getElementById('s' + cur).classList.add('active');
+
+  document.getElementById('dot' + prev).className = 'dot done';
+  document.getElementById('dot' + cur).className = 'dot current';
+
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('prevBtn').disabled = cur === 0;
+  document.getElementById('nextBtn').disabled = cur === TOTAL - 1;
+}
+
+// keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+});
+
+buildDots();
+</script>
+</body>
+</html>
